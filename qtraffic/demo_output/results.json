@@ -1,0 +1,74 @@
+{
+  "exact_n8": {
+    "optimal_cost": 331.8859693358917,
+    "qpso_h_cost": 331.8859693358917,
+    "qpso_h_gap_pct": 0.0,
+    "nn_cost": 331.8859693358917,
+    "nn_gap_pct": 0.0
+  },
+  "benchmark_n40": [
+    {
+      "algorithm": "NN",
+      "mean_cost": 14218.28,
+      "std_cost": 4740.9,
+      "best_cost": 10839.0,
+      "mean_time_ms": 0.3,
+      "mean_iters_99": 1.0
+    },
+    {
+      "algorithm": "PSO",
+      "mean_cost": 5013.61,
+      "std_cost": 4664.01,
+      "best_cost": 1613.36,
+      "mean_time_ms": 479.0,
+      "mean_iters_99": 75.3
+    },
+    {
+      "algorithm": "GA",
+      "mean_cost": 8238.42,
+      "std_cost": 4660.42,
+      "best_cost": 1649.19,
+      "mean_time_ms": 537.2,
+      "mean_iters_99": 78.3
+    },
+    {
+      "algorithm": "QPSO",
+      "mean_cost": 5121.53,
+      "std_cost": 4705.88,
+      "best_cost": 1732.08,
+      "mean_time_ms": 478.5,
+      "mean_iters_99": 50.7
+    },
+    {
+      "algorithm": "QPSO-H",
+      "mean_cost": 8193.85,
+      "std_cost": 4569.49,
+      "best_cost": 1732.08,
+      "mean_time_ms": 376.9,
+      "mean_iters_99": 9.0
+    }
+  ],
+  "scalability_n120": {
+    "n": 120,
+    "cost": 104430.42,
+    "vehicles_used": 24,
+    "runtime_ms": 1303.1,
+    "feasible": true
+  },
+  "replanning": {
+    "pre_congestion_cost": 11503.71,
+    "congestion_zone": {
+      "x": 50.0,
+      "y": 50.0,
+      "radius": 18.0,
+      "factor": 3.5
+    },
+    "cold_cost": 14032.47,
+    "cold_time_ms": 330.3,
+    "cold_iters_99": 1,
+    "warm_cost": 12782.08,
+    "warm_time_ms": 380.5,
+    "warm_iters_99": 10,
+    "warm_faster": false
+  }
+}

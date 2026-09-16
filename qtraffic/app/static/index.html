@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Q-Traffic: Quantum-Inspired Intelligent Traffic Route Optimization for CVRP (SIH26137)">
+  <title>Q-Traffic | Quantum-Inspired Traffic Route Optimization (SIH26137)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="logo-area">
+      <div class="logo-symbol">Ψ</div>
+      <div class="logo-text">
+        <h1>Q-Traffic</h1>
+        <span class="subtext">Quantum-behaved Particle Swarm CVRP Optimizer &bull; SIH26137</span>
+      </div>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-quantum">QPSO-H Lamarckian</span>
+      <span class="badge badge-status" id="systemStatusBadge">Ready</span>
+    </div>
+  </header>
+
+  <main class="app-container">
+    <!-- Left Control Panel -->
+    <aside class="panel control-panel">
+      <h2 class="panel-title">Configuration &amp; Controls</h2>
+
+      <div class="control-group">
+        <label for="inputN">
+          Customers (n): <strong id="valN">40</strong>
+        </label>
+        <input type="range" id="inputN" min="5" max="200" value="40" step="5">
+      </div>
+
+      <div class="grid-2col">
+        <div class="control-group">
+          <label for="inputVehicles">Fleet Size (K):</label>
+          <input type="number" id="inputVehicles" min="1" max="50" value="6">
+        </div>
+        <div class="control-group">
+          <label for="inputCapacity">Capacity (Q):</label>
+          <input type="number" id="inputCapacity" min="10" max="200" value="30">
+        </div>
+      </div>
+
+      <div class="grid-2col">
+        <div class="control-group">
+          <label for="inputSeed">Seed:</label>
+          <input type="number" id="inputSeed" value="42">
+        </div>
+        <div class="control-group">
+          <label for="selectAlgo">Algorithm:</label>
+          <select id="selectAlgo">
+            <option value="qpso_h" selected>QPSO-H (Hybrid)</option>
+            <option value="qpso">QPSO (Quantum)</option>
+            <option value="pso">Classical PSO</option>
+            <option value="ga">Genetic Algorithm</option>
+            <option value="nn">Nearest Neighbor</option>
+            <option value="exact">Exact (n &le; 8)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2col">
+        <div class="control-group">
+          <label for="inputPop">Swarm / Pop:</label>
+          <input type="number" id="inputPop" min="4" max="200" value="40">
+        </div>
+        <div class="control-group">
+          <label for="inputIters">Iterations:</label>
+          <input type="number" id="inputIters" min="10" max="1000" value="150">
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button id="btnGenerateCity" class="btn btn-primary">
+          <span class="btn-icon">&#128506;</span> Generate City
+        </button>
+        <button id="btnOptimize" class="btn btn-accent" disabled>
+          <span class="btn-icon">&#9889;</span> Optimize Routes
+        </button>
+      </div>
+
+      <hr class="divider">
+
+      <h3 class="section-title">Dynamic Traffic Simulation</h3>
+      <div class="grid-3col">
+        <div class="control-group">
+          <label for="inputCongX">Center X:</label>
+          <input type="number" id="inputCongX" min="0" max="100" value="50">
+        </div>
+        <div class="control-group">
+          <label for="inputCongY">Center Y:</label>
+          <input type="number" id="inputCongY" min="0" max="100" value="50">
+        </div>
+        <div class="control-group">
+          <label for="inputCongRadius">Radius:</label>
+          <input type="number" id="inputCongRadius" min="5" max="40" value="15">
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="inputCongFactor">Congestion Factor (1x - 10x): <strong id="valCongFactor">3.0x</strong></label>
+        <input type="range" id="inputCongFactor" min="1" max="10" step="0.5" value="3.0">
+      </div>
+
+      <button id="btnInjectCongestion" class="btn btn-warning" disabled>
+        <span class="btn-icon">&#9888;</span> Inject Congestion Zone
+      </button>
+
+      <div class="replan-buttons">
+        <button id="btnReplanWarm" class="btn btn-replan-warm" disabled title="Warm start using Gaussian perturbed prior keys">
+          &#128293; Replan (Warm)
+        </button>
+        <button id="btnReplanCold" class="btn btn-replan-cold" disabled title="Cold start with fresh random particles">
+          &#10052; Replan (Cold)
+        </button>
+      </div>
+
+      <hr class="divider">
+
+      <button id="btnBenchmark" class="btn btn-outline">
+        <span class="btn-icon">&#128202;</span> Run Multi-Algorithm Benchmark
+      </button>
+
+      <div id="statusToast" class="status-toast hidden"></div>
+    </aside>
+
+    <!-- Center Canvas Map -->
+    <section class="panel map-panel">
+      <div class="panel-header-flex">
+        <h2 class="panel-title">Transportation Network (100 &times; 100 Plane)</h2>
+        <div class="map-controls">
+          <span class="legend-item"><span class="marker marker-depot"></span> Depot (0)</span>
+          <span class="legend-item"><span class="marker marker-customer"></span> Customer (demand &prop; size)</span>
+          <span class="legend-item"><span class="marker marker-congestion"></span> Congestion Zone</span>
+        </div>
+      </div>
+
+      <div class="canvas-wrapper">
+        <canvas id="mapCanvas" width="700" height="700"></canvas>
+        <div id="mapTooltip" class="map-tooltip hidden"></div>
+      </div>
+
+      <div id="routeLegend" class="route-legend"></div>
+    </section>
+
+    <!-- Right Results Panel -->
+    <aside class="panel results-panel">
+      <h2 class="panel-title">Optimization Performance</h2>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span class="metric-label">Total Cost</span>
+          <span class="metric-val" id="metricCost">&mdash;</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Vehicles Used</span>
+          <span class="metric-val" id="metricVehicles">&mdash;</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Solve Time</span>
+          <span class="metric-val" id="metricTime">&mdash;</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Ladder Level</span>
+          <span class="metric-val badge-level" id="metricLevel">&mdash;</span>
+        </div>
+      </div>
+
+      <div id="staleAlert" class="alert alert-stale hidden">
+        <strong>Cached Plan Returned:</strong> Solver exception encountered; displaying previous valid solution (L5 Fallback).
+      </div>
+
+      <h3 class="section-title">Convergence Trajectory</h3>
+      <div class="convergence-wrapper">
+        <canvas id="chartCanvas" width="380" height="200"></canvas>
+      </div>
+
+      <div id="replanStatsArea" class="replan-stats hidden">
+        <h3 class="section-title">Warm vs. Cold Replan Metrics</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Warm Start</th>
+              <th>Cold Start</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Cost</td>
+              <td id="statWarmCost">&mdash;</td>
+              <td id="statColdCost">&mdash;</td>
+            </tr>
+            <tr>
+              <td>Time (ms)</td>
+              <td id="statWarmTime">&mdash;</td>
+              <td id="statColdTime">&mdash;</td>
+            </tr>
+            <tr>
+              <td>Iters to 99%</td>
+              <td id="statWarmIters">&mdash;</td>
+              <td id="statColdIters">&mdash;</td>
+            </tr>
+          </tbody>
+        </table>
+        <div id="warmFasterBanner" class="speedup-banner"></div>
+      </div>
+
+      <div id="benchmarkArea" class="benchmark-area hidden">
+        <h3 class="section-title">Empirical Benchmark Results</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Solver</th>
+              <th>Mean Cost</th>
+              <th>Best</th>
+              <th>Time (ms)</th>
+              <th>Iters 99%</th>
+            </tr>
+          </thead>
+          <tbody id="benchmarkTableBody"></tbody>
+        </table>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="app-footer">
+    <span>Smart India Hackathon 2026 &bull; Problem SIH26137: Quantum-Inspired Intelligent Traffic Route Optimization</span>
+    <span>Autonomous CVRP Engine &bull; Zero Mock Data Guarantee</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

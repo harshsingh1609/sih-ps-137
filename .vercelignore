@@ -1,0 +1,19 @@
+# Ignore test suites and evaluation profiles
+tests/
+qtraffic/tests/
+qa/
+qtraffic/qa/
+demo_output/
+qtraffic/demo_output/
+
+# Cache & Environment
+__pycache__/
+*.pyc
+.pytest_cache/
+.env*
+.venv/
+venv/
+
+# Documentation / Markdown
+*.md
+!README.md

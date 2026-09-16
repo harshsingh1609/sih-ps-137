@@ -1,0 +1,25 @@
+{
+  "phase": "Phase 0 - Baseline Snapshot",
+  "timestamp": "2026-09-14T16:33:00+05:30",
+  "environment": {
+    "python_version": "3.10.9",
+    "os": "Microsoft Windows 11 Home Single Language",
+    "shell": "PowerShell",
+    "packages_installed": ["fastapi>=0.110.0", "uvicorn>=0.28.0", "numpy>=1.24.0", "pytest>=8.0.0", "httpx>=0.27.0", "matplotlib>=3.8.0"]
+  },
+  "baseline_test_run": {
+    "command": "python -m pytest tests/ -v --tb=short",
+    "exit_code": 0,
+    "total_tests": 11,
+    "passed": 11,
+    "failed": 0,
+    "errors": 0,
+    "duration_sec": 10.66,
+    "warnings": 3,
+    "warning_notes": ["httpx starlette deprecation - use httpx2", "anyio BlockingPortal alias deprecated", "HTTP_422_UNPROCESSABLE_ENTITY deprecated"]
+  },
+  "health_endpoint": {
+    "status": "NOT_YET_MEASURED - server starting separately"
+  },
+  "notes": "All 11 baseline tests pass. Warnings are from third-party library deprecations, not from application code. QA testing will now proceed."
+}
