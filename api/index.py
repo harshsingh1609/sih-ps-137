@@ -5,6 +5,7 @@ Exposes the FastAPI ASGI `app` instance with Vercel path-rewrite restoration.
 
 from __future__ import annotations
 import sys
+import json
 from pathlib import Path
 
 # Ensure root directory is in sys.path
@@ -30,20 +31,27 @@ class VercelPathMiddleware:
     async def __call__(self, scope, receive, send):
         if scope.get("type") in ("http", "websocket"):
             headers = dict(scope.get("headers", []))
-            
-            # Look for headers where Vercel preserves the original incoming request URI
-            orig_header = (
-                headers.get(b"x-matched-path")
-                or headers.get(b"x-forwarded-uri")
-                or headers.get(b"x-original-uri")
-                or headers.get(b"x-rewrite-url")
-            )
-            
-            if orig_header:
-                orig_path = orig_header.decode("utf-8", errors="ignore").split("?")[0]
-                # If Vercel rewrote the path to /api/index.py, restore the real target path
-                if orig_path and scope.get("path") in ("/api/index.py", "/api/index", "/api"):
-                    scope["path"] = orig_path
+            raw_path = scope.get("path", "")
+
+            # If debug requested, return immediate JSON of headers and scope
+            if "debug" in raw_path or b"debug" in headers.get(b"x-matched-path", b""):
+                response_data = json.dumps({
+                    "scope_path": raw_path,
+                    "headers": {k.decode("latin1"): v.decode("latin1") for k, v in headers.items()}
+                }).encode("utf-8")
+                await send({
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [
+                        [b"content-type", b"application/json"],
+                        [b"content-length", str(len(response_data)).encode("ascii")],
+                    ],
+                })
+                await send({
+                    "type": "http.response.body",
+                    "body": response_data,
+                })
+                return
 
             # Normalization: if path had /api stripped by function routing, restore it
             current_path = scope.get("path", "")
