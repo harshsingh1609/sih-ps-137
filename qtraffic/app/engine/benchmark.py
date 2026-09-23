@@ -34,6 +34,9 @@ def run_benchmark(
         for algo in algorithms
     }
 
+    # Budget per solver call: 1.5s keeps total benchmark time reasonable on Vercel.
+    BENCH_BUDGET = 1.5
+
     for s in seeds:
         seed_val = int(s)
         city = City(n=n, vehicles=vehicles, capacity=capacity, seed=seed_val)
@@ -46,25 +49,25 @@ def run_benchmark(
         results_by_algo["nn"]["iters_99"].append(1.0)
 
         # 2. PSO
-        pso_res = solve_pso(prob, pop=pop, iters=iters, seed=seed_val)
+        pso_res = solve_pso(prob, pop=pop, iters=iters, seed=seed_val, time_budget_sec=BENCH_BUDGET)
         results_by_algo["pso"]["costs"].append(pso_res.cost)
         results_by_algo["pso"]["times"].append(pso_res.time_ms)
         results_by_algo["pso"]["iters_99"].append(float(compute_iterations_to_99pct(pso_res.convergence)))
 
         # 3. GA
-        ga_res = solve_ga(prob, pop=pop, iters=iters, seed=seed_val)
+        ga_res = solve_ga(prob, pop=pop, iters=iters, seed=seed_val, time_budget_sec=BENCH_BUDGET)
         results_by_algo["ga"]["costs"].append(ga_res.cost)
         results_by_algo["ga"]["times"].append(ga_res.time_ms)
         results_by_algo["ga"]["iters_99"].append(float(compute_iterations_to_99pct(ga_res.convergence)))
 
         # 4. QPSO
-        qpso_res = solve_qpso(prob, pop=pop, iters=iters, seed=seed_val, hybrid=False)
+        qpso_res = solve_qpso(prob, pop=pop, iters=iters, seed=seed_val, hybrid=False, time_budget_sec=BENCH_BUDGET)
         results_by_algo["qpso"]["costs"].append(qpso_res.cost)
         results_by_algo["qpso"]["times"].append(qpso_res.time_ms)
         results_by_algo["qpso"]["iters_99"].append(float(compute_iterations_to_99pct(qpso_res.convergence)))
 
         # 5. QPSO-H
-        qpso_h_res = solve_qpso(prob, pop=pop, iters=iters, seed=seed_val, hybrid=True)
+        qpso_h_res = solve_qpso(prob, pop=pop, iters=iters, seed=seed_val, hybrid=True, time_budget_sec=BENCH_BUDGET)
         results_by_algo["qpso_h"]["costs"].append(qpso_h_res.cost)
         results_by_algo["qpso_h"]["times"].append(qpso_h_res.time_ms)
         results_by_algo["qpso_h"]["iters_99"].append(float(compute_iterations_to_99pct(qpso_h_res.convergence)))

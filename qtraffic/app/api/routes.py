@@ -101,18 +101,21 @@ def solve_cvrp(req: SolveRequest):
         )
 
     try:
+        # time_budget_sec keeps us within Vercel's 10-second function timeout.
+        # Solvers return the best solution found so far when the budget expires.
+        TIME_BUDGET = 8.0
         if algo == "exact":
             res = solve_exact(problem, seed=req.seed)
         elif algo == "nn":
             res = solve_nn(problem, seed=req.seed)
         elif algo == "pso":
-            res = solve_pso(problem, pop=req.pop, iters=req.iters, seed=req.seed)
+            res = solve_pso(problem, pop=req.pop, iters=req.iters, seed=req.seed, time_budget_sec=TIME_BUDGET)
         elif algo == "ga":
-            res = solve_ga(problem, pop=req.pop, iters=req.iters, seed=req.seed)
+            res = solve_ga(problem, pop=req.pop, iters=req.iters, seed=req.seed, time_budget_sec=TIME_BUDGET)
         elif algo == "qpso":
-            res = solve_qpso(problem, pop=req.pop, iters=req.iters, seed=req.seed, hybrid=False)
+            res = solve_qpso(problem, pop=req.pop, iters=req.iters, seed=req.seed, hybrid=False, time_budget_sec=TIME_BUDGET)
         elif algo == "qpso_h":
-            res = solve_qpso(problem, pop=req.pop, iters=req.iters, seed=req.seed, hybrid=True)
+            res = solve_qpso(problem, pop=req.pop, iters=req.iters, seed=req.seed, hybrid=True, time_budget_sec=TIME_BUDGET)
         else:
             raise ValueError(f"Unknown algorithm {algo}")
 
@@ -219,12 +222,12 @@ def replan(req: ReplanRequest):
 
 @router.get("/api/benchmark", status_code=status.HTTP_200_OK)
 def benchmark_endpoint(
-    n: int = Query(default=40, ge=5, le=100),
+    n: int = Query(default=30, ge=5, le=100),
     vehicles: int = Query(default=6, ge=1),
     capacity: int = Query(default=30, ge=1),
-    seeds: str = Query(default="1,2,3,4,5"),
-    pop: int = Query(default=20, ge=4, le=100),
-    iters: int = Query(default=100, ge=10, le=500),
+    seeds: str = Query(default="1,2"),
+    pop: int = Query(default=10, ge=4, le=100),
+    iters: int = Query(default=50, ge=10, le=500),
 ):
     """Execute multi-algorithm multi-seed benchmark and return honest summary table."""
     try:

@@ -23,7 +23,12 @@ from app.main import app as fastapi_app
 
 
 class VercelPathMiddleware:
-    """ASGI Middleware to restore the original request path from Vercel rewrite headers."""
+    """ASGI Middleware to restore the original request path from Vercel rewrite headers.
+
+    Vercel rewrites all /api/* traffic to /api/index.py (the handler file), but
+    sets the original path in the `x-forwarded-uri` header. Without this middleware,
+    FastAPI would see '/api/index.py' for every request and match nothing.
+    """
 
     def __init__(self, app):
         self.app = app
@@ -31,32 +36,22 @@ class VercelPathMiddleware:
     async def __call__(self, scope, receive, send):
         if scope.get("type") in ("http", "websocket"):
             headers = dict(scope.get("headers", []))
-            raw_path = scope.get("path", "")
 
-            # If debug requested, return immediate JSON of headers and scope
-            if "debug" in raw_path or b"debug" in headers.get(b"x-matched-path", b""):
-                response_data = json.dumps({
-                    "scope_path": raw_path,
-                    "headers": {k.decode("latin1"): v.decode("latin1") for k, v in headers.items()}
-                }).encode("utf-8")
-                await send({
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [
-                        [b"content-type", b"application/json"],
-                        [b"content-length", str(len(response_data)).encode("ascii")],
-                    ],
-                })
-                await send({
-                    "type": "http.response.body",
-                    "body": response_data,
-                })
-                return
+            # x-forwarded-uri is set by Vercel to the original request URI
+            # e.g. for a request to /api/city?foo=bar, this will be b"/api/city"
+            forwarded_uri = headers.get(b"x-forwarded-uri", b"").decode("latin1")
+            # Strip query string if present (path only)
+            original_path = forwarded_uri.split("?")[0] if forwarded_uri else ""
 
-            # Normalization: if path had /api stripped by function routing, restore it
-            current_path = scope.get("path", "")
-            if current_path in ("/city", "/solve", "/congestion", "/replan", "/benchmark"):
-                scope["path"] = f"/api{current_path}"
+            # Also check x-matched-path as secondary fallback
+            matched_path = headers.get(b"x-matched-path", b"").decode("latin1").split("?")[0]
+
+            # Determine which path to use
+            if original_path and original_path not in ("/", ""):
+                scope["path"] = original_path
+            elif matched_path and matched_path not in ("/api/index.py", "/", ""):
+                scope["path"] = matched_path
+            # else: keep whatever scope["path"] already is
 
         await self.app(scope, receive, send)
 
@@ -69,6 +64,7 @@ async def debug_endpoint(request: Request):
         "raw_path": request.url.path,
         "matched_path": request.headers.get("x-matched-path"),
         "forwarded_uri": request.headers.get("x-forwarded-uri"),
+        "all_headers": dict(request.headers),
     }
 
 

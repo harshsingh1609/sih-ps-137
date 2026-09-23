@@ -641,7 +641,7 @@
 
     try {
       const res = await fetch(
-        `/api/benchmark?n=${n}&vehicles=${vehicles}&capacity=${capacity}&seeds=1,2,3&pop=20&iters=80`
+        `/api/benchmark?n=${n}&vehicles=${vehicles}&capacity=${capacity}&seeds=1,2&pop=10&iters=50`
       );
 
       if (!res.ok) {
