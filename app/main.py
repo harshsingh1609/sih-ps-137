@@ -37,16 +37,22 @@ def health():
 # Include API routes
 app.include_router(router)
 
-# Mount static frontend directory (supports both app/static and public directories)
-STATIC_DIR = Path(__file__).resolve().parent / "static"
-if not (STATIC_DIR / "index.html").exists():
-    PUBLIC_DIR = Path(__file__).resolve().parent.parent / "public"
-    if (PUBLIC_DIR / "index.html").exists():
-        STATIC_DIR = PUBLIC_DIR
+# Mount static frontend directory — only in local dev, not on Vercel.
+# On Vercel, the public/ directory is served by the platform as static files;
+# mounting it here would conflict and intercept API routes.
+import os as _os
+_is_vercel = bool(_os.environ.get("VERCEL") or _os.environ.get("VERCEL_ENV"))
 
-STATIC_DIR.mkdir(parents=True, exist_ok=True)
-if (STATIC_DIR / "index.html").exists():
-    app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
+if not _is_vercel:
+    STATIC_DIR = Path(__file__).resolve().parent / "static"
+    if not (STATIC_DIR / "index.html").exists():
+        PUBLIC_DIR = Path(__file__).resolve().parent.parent / "public"
+        if (PUBLIC_DIR / "index.html").exists():
+            STATIC_DIR = PUBLIC_DIR
+
+    STATIC_DIR.mkdir(parents=True, exist_ok=True)
+    if (STATIC_DIR / "index.html").exists():
+        app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
 
 
 @app.exception_handler(Exception)

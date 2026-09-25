@@ -78,6 +78,9 @@ def run_replan(
     cold_seed = seed if seed is not None else 42
     warm_seed = (seed + 1000) if seed is not None else 1042
 
+    # Each run gets a 4-second budget (2 runs per request = 8s total, within Vercel's 10s limit).
+    REPLAN_BUDGET = 4.0
+
     # 1. Cold Replanning (no prior information)
     cold_res = solve_qpso(
         problem=problem,
@@ -86,6 +89,7 @@ def run_replan(
         seed=cold_seed,
         hybrid=hybrid,
         initial_keys=None,
+        time_budget_sec=REPLAN_BUDGET,
     )
     cold_iters_99 = compute_iterations_to_99pct(cold_res.convergence)
 
@@ -97,6 +101,7 @@ def run_replan(
         seed=warm_seed,
         hybrid=hybrid,
         initial_keys=previous_keys,
+        time_budget_sec=REPLAN_BUDGET,
     )
     warm_iters_99 = compute_iterations_to_99pct(warm_res.convergence)
 

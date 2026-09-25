@@ -1,6 +1,8 @@
 """FastAPI routing endpoints for CVRP solving, congestion injection, replanning, and benchmarks."""
 
 from __future__ import annotations
+import logging
+import traceback
 from typing import List, Optional, Dict, Any
 import numpy as np
 from pydantic import BaseModel, Field, field_validator
@@ -16,6 +18,7 @@ from app.engine.qpso import solve_qpso, SolverResult
 from app.engine.replanner import run_replan
 from app.engine.benchmark import run_benchmark
 
+logger = logging.getLogger("qtraffic")
 router = APIRouter()
 
 
@@ -131,9 +134,17 @@ def solve_cvrp(req: SolveRequest):
         }
 
     except Exception as exc:
+        logger.error(
+            "Solver execution exception on city '%s' with algo '%s': %s\n%s",
+            req.city_id,
+            algo,
+            exc,
+            traceback.format_exc(),
+        )
         # Fallback Level L5: Cached valid plan with stale: true
         cached = store.get_last_solution(req.city_id)
         if cached is not None:
+            logger.warning("Returning L5 cached plan fallback for city '%s' after solver exception.", req.city_id)
             return {
                 "routes": cached.routes,
                 "cost": float(round(cached.cost, 2)),

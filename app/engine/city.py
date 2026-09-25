@@ -1,7 +1,6 @@
 """City generation, customer coordinate and demand initialization."""
 
 from __future__ import annotations
-import uuid
 from typing import Dict, Any, Optional
 import numpy as np
 from app.engine.problem import CVRPProblem
@@ -20,7 +19,9 @@ class City:
         depot_coords: tuple[float, float] = (50.0, 50.0),
     ):
         seed_tag = seed if seed is not None else 1
-        self.city_id = city_id or f"c_{int(n)}_{int(vehicles)}_{int(capacity)}_{seed_tag}_{uuid.uuid4().hex[:8]}"
+        # Deterministic ID — no random suffix so serverless re-hydration works
+        # across separate Vercel invocations (each call gets a fresh Python process).
+        self.city_id = city_id or f"c_{int(n)}_{int(vehicles)}_{int(capacity)}_{seed_tag}"
         self.n = int(n)
         self.vehicles = int(vehicles)
         self.capacity = int(capacity)
